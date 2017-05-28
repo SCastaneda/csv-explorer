@@ -74,6 +74,7 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <script>
+    // socket is used to display the upload progress
     var socket = io('http://localhost:' + <%= port %>);
 
     var bar = $('.progress-bar');
@@ -107,7 +108,7 @@
               percent.html(percentVal);
           },
         complete: function(xhr) {
-          // status.html(xhr.responseText);
+          $('#results').html("Your file has been uploaded and is being processed. Feel free to start searching.")
         }
       }); 
 
