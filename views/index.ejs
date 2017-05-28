@@ -1,33 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>CSV explorer</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>CSV Explorer</title>
+
+    <!-- Bootstrap -->
+    <link href="/stylesheets/bootstrap.min.css" rel="stylesheet">
     <link rel='stylesheet' href='/stylesheets/style.css' />
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
   </head>
   <body>
     <p>Upload and explore your Data</p>
 
     <form action="/import" method="post" enctype="multipart/form-data">
-      <input id="uploadField" type="file" name="csv">
-      <input id="uploadButton" type="submit" value="Upload">
+      <input id="uploadField" style="display:inline-block"  type="file" name="csv">
+      <input id="uploadButton" class="btn btn-success" type="submit" value="Upload">
     </form>
     <br>
     <div class="progress">
-        <div class="bar"></div>
+      <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
         <span class="percent">0%</span>
+      </div>
     </div>
 
-    <div id="status"></div>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="input-group">
+            <input id="searchField" type="text" class="form-control" placeholder="Search for...">
+            <span class="input-group-btn">
+              <button id="searchButton" class="btn btn-default" type="button">Search</button>
+            </span>
+          </div><!-- /input-group -->
+        </div><!-- /.col-lg-6 -->
+      </div>
+    </div>
+    
+    <br>
 
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="panel panel-default"> 
+          <div class="panel-heading">Your data</div> 
+          <table class="table"> 
+            <thead> 
+              <tr> 
+                <th>#</th> <th>Name</th> <th>Age</th> <th>Address</th> <th>Team</th> 
+              </tr> 
+            </thead> 
+            <tbody id="results"> 
+               
+            </tbody> 
+            </table> 
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="/javascripts/bootstrap.min.js"></script>
+    <script src="/javascripts/search.js"></script>
     <script src="http://malsup.github.com/jquery.form.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+
     <script>
     var socket = io('http://localhost:' + <%= port %>);
 
-    var bar = $('.bar');
+    var bar = $('.progress-bar');
     var percent = $('.percent');
-    var status = $('#status');
 
     socket.on('progress', function (data) {
       console.log(data);
@@ -53,7 +103,7 @@
           },
           success: function() {
               var percentVal = '100%';
-              bar.width(percentVal)
+              bar.width(percentVal);
               percent.html(percentVal);
           },
         complete: function(xhr) {
@@ -61,10 +111,46 @@
         }
       }); 
 
-    })();  
+    })();
 
-    
-       
+    function populateTable(data) {
+      console.log(data);
+
+      var tableData = "";
+
+      for(var i = 0; i < data.length; i++) {
+        var row = '<tr id="result-' + i + '"> '
+                + '<th scope="row">' + data[i].id + '</th>'
+                + '<td>' + data[i].name + '</td>'
+                + '<td>' + data[i].age + '</td>'
+                + '<td>' + data[i].address + '</td>'
+                + '<td>' + data[i].team + '</td>'
+                + '</tr>';
+
+        tableData = tableData + row;
+      }
+
+      $('#results').html(tableData);
+    }
+
+    $('#searchButton').on('click', function(){
+      $('#searchField').trigger("enterKey");
+    });
+
+    $('#searchField').bind("enterKey",function(e){
+      var query = $(this).val();
+      search(query, function(data) {
+        populateTable(data);
+      });
+    });
+
+    $('#searchField').keyup(function(e){
+        if(e.keyCode == 13)
+        {
+            $(this).trigger("enterKey");
+        }
+    });
+
     </script>
 
   </body>

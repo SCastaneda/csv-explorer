@@ -6,7 +6,3 @@ body {
 a {
   color: #00B7FF;
 }
-
-.progress { position:relative; width:400px; border: 1px solid #ddd; padding: 1px; border-radius: 30px; }
-.bar { background-color: #4c7ed8; width:0%; height:20px; border-radius: 25px; }
-.percent { position:absolute; display:inline-block; top:3px; left:48%; }
