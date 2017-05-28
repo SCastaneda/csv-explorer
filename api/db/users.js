@@ -60,18 +60,26 @@ exports.search = function(query, cb) {
     if(isNumberSearch) {
         findById(+query, function(err, user) {
 
-            res = res.concat(user);
+            if(user !== null) {
+                res = res.concat(user);
+            }
 
             var limit = totalLimit - res.length;
 
             numberSearch(+query, limit, function(err, users) {
-                res = res.concat(users);
+
+                if(users !== null) {
+                    res = res.concat(users);
+                }
 
                 if(res.length != totalLimit)
                 {
                     var limit = totalLimit - res.length;
                     textSearch(query, limit, function(err, users2) {
-                        res = res.concat(users2);
+
+                        if(users2 !== null) {
+                            res = res.concat(users2);
+                        }
                         cb(err, res);
                     });
                 } else {
