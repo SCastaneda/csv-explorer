@@ -46,6 +46,7 @@
     (function() {
       $('form').ajaxForm({
           beforeSend: function() {
+              socket.connect();
               var percentVal = '0%';
               bar.width(percentVal)
               percent.html(percentVal);

@@ -46,11 +46,17 @@ function saveUser(user) {
 
 exports.search = function(query, cb) {
 
-    var isNumberSearch = !isNaN(+query);
     var totalLimit = 20;
     var res = [];
 
-    // query could be a number, which is either id or age
+    /*
+        If this is a number search
+        1. check if it's an id
+        2. check if it's an age search
+        3. do a text search on the number
+    */
+    var isNumberSearch = !isNaN(+query);
+    
     if(isNumberSearch) {
         findById(+query, function(err, user) {
 
