@@ -19,7 +19,7 @@
     <![endif]-->
   </head>
   <body>
-    <p>Upload and explore your Data</p>
+    <p>Upload and Explore your Data</p>
 
     <form action="/import" method="post" enctype="multipart/form-data">
       <input id="uploadField" style="display:inline-block"  type="file" name="csv">
@@ -50,7 +50,6 @@
     <div class="container-fluid">
       <div class="row">
         <div class="panel panel-default"> 
-          <div class="panel-heading">Your data</div> 
           <table class="table"> 
             <thead> 
               <tr> 
@@ -73,84 +72,29 @@
     <script src="http://malsup.github.com/jquery.form.js"></script>
     <script src="/socket.io/socket.io.js"></script>
 
+    <script type="text/javascript">
+    var port = <%= port %>;
+    </script>
+    <script src="/javascripts/progress.js"></script>
+
     <script>
-    // socket is used to display the upload progress
-    var socket = io('http://localhost:' + <%= port %>);
-
-    var bar = $('.progress-bar');
-    var percent = $('.percent');
-
-    socket.on('progress', function (data) {
-      console.log(data);
-      var percentVal = data.progress + '%';
-      bar.width(percentVal)
-      percent.html(percentVal);
-    });
-
-    socket.on('complete', function (data) {
-        console.log("File processing complete");
-        var percentVal = '100%';
-        bar.width(percentVal)
-        percent.html(percentVal);
-    });
-
+    // upload form
     (function() {
       $('form').ajaxForm({
           beforeSend: function() {
-              socket.connect();
+              // reconnect the socket for the progress bar
+              reconnect();
               var percentVal = '0%';
               bar.width(percentVal)
               percent.html(percentVal);
           },
-          success: function() {
-              var percentVal = '100%';
-              bar.width(percentVal);
-              percent.html(percentVal);
-          },
-        complete: function(xhr) {
-          $('#results').html("Your file has been uploaded and is being processed. Feel free to start searching.")
-        }
+          success: function() {},
+          complete: function(xhr) {
+            $('#results').html("Your file has been uploaded and is being processed. Feel free to start searching.")
+          }
       }); 
 
     })();
-
-    function populateTable(data) {
-      console.log(data);
-
-      var tableData = "";
-
-      for(var i = 0; i < data.length; i++) {
-        var row = '<tr id="result-' + i + '"> '
-                + '<th scope="row">' + data[i].id + '</th>'
-                + '<td>' + data[i].name + '</td>'
-                + '<td>' + data[i].age + '</td>'
-                + '<td>' + data[i].address + '</td>'
-                + '<td>' + data[i].team + '</td>'
-                + '</tr>';
-
-        tableData = tableData + row;
-      }
-
-      $('#results').html(tableData);
-    }
-
-    $('#searchButton').on('click', function(){
-      $('#searchField').trigger("enterKey");
-    });
-
-    $('#searchField').bind("enterKey",function(e){
-      var query = $(this).val();
-      search(query, function(data) {
-        populateTable(data);
-      });
-    });
-
-    $('#searchField').keyup(function(e){
-        if(e.keyCode == 13)
-        {
-            $(this).trigger("enterKey");
-        }
-    });
 
     </script>
 
