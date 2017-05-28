@@ -1,20 +1,70 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= title %></title>
+    <title>CSV explorer</title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
+    <p>Upload and explore your Data</p>
 
-    <form ref='uploadForm' 
-      id='uploadForm' 
-      action='/import' 
-      method='post' 
-      encType="multipart/form-data">
-        <input type="file" name="csv" />
-        <input type='submit' value='Upload!' />
-    </form> 
+    <form action="/import" method="post" enctype="multipart/form-data">
+      <input id="uploadField" type="file" name="csv">
+      <input id="uploadButton" type="submit" value="Upload">
+    </form>
+    <br>
+    <div class="progress">
+        <div class="bar"></div>
+        <span class="percent">0%</span>
+    </div>
+
+    <div id="status"></div>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script>
+    <script src="http://malsup.github.com/jquery.form.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    var socket = io('http://localhost:' + <%= port %>);
+
+    var bar = $('.bar');
+    var percent = $('.percent');
+    var status = $('#status');
+
+    socket.on('progress', function (data) {
+      console.log(data);
+      var percentVal = data.progress + '%';
+      bar.width(percentVal)
+      percent.html(percentVal);
+    });
+
+    socket.on('complete', function (data) {
+        console.log("File processing complete");
+        var percentVal = '100%';
+        bar.width(percentVal)
+        percent.html(percentVal);
+    });
+
+    (function() {
+      $('form').ajaxForm({
+          beforeSend: function() {
+              var percentVal = '0%';
+              bar.width(percentVal)
+              percent.html(percentVal);
+          },
+          success: function() {
+              var percentVal = '100%';
+              bar.width(percentVal)
+              percent.html(percentVal);
+          },
+        complete: function(xhr) {
+          // status.html(xhr.responseText);
+        }
+      }); 
+
+    })();  
+
+    
+       
+    </script>
+
   </body>
 </html>
