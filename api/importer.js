@@ -68,6 +68,8 @@ exports.importCSV = function(expressTmpFile, socket, cb) {
 			rl.on('close', function() {
 				console.log("Finished importing file into db");
 				socket.emit("complete", {});
+
+				fs.unlinkSync(newFileName);
 				return cb();
 			});
 
