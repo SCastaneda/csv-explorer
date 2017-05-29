@@ -87,6 +87,8 @@
               var percentVal = '0%';
               bar.width(percentVal)
               percent.html(percentVal);
+              $('#uploadButton').prop('disabled', true);
+              $('#uploadButton').html("Upload in Progress");
           },
           success: function() {},
           complete: function(xhr) {

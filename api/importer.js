@@ -26,62 +26,70 @@ function saveToFile(expressTmpFile, newFileName, cb) {
 	});
 }
 
-exports.importCSV = function(expressTmpFile, socket, cb) {
+exports.importCSV = function(expressTmpFile, sockets, cb) {
 
 	// delete previous data
-	dbUsers.dropUsers();
+	dbUsers.dropUsers(function() {
 
-	var newFileName = "./files/large.csv";
+		var newFileName = "./files/large.csv";
 
-	var totalFileSize = expressTmpFile.data.length;
+		var totalFileSize = expressTmpFile.data.length;
+		
+
+		console.log("Total Files Size: " + totalFileSize);
+
+		saveToFile(expressTmpFile, newFileName, function(success) {
+
+			console.log("Start parsing of file, line-by-line");
+
+			if (success) {
+				var rl = readline.createInterface({
+					input: fs.createReadStream(newFileName)
+				});
+				handleDBImport(rl, totalFileSize, sockets, function() {
+					fs.unlinkSync(newFileName);
+					cb();
+				});
+			} else {
+				return cb("Could not save to file");
+			}
+
+		});
+	});
+};
+
+
+function handleDBImport(rl, totalFileSize, sockets, cb) {
+
 	var totalProcessed = 0.0;
 	var progress = 0;
 
-	console.log("Total Files Size: " + totalFileSize);
+	rl.on('line', function(line) {
+		var csvObj = parse(line);
+		dbUsers.saveUser(createUserObject(csvObj[0]));
 
-	saveToFile(expressTmpFile, newFileName, function(success) {
+		totalProcessed = totalProcessed + Buffer.byteLength(line);
+		var newProgress = Math.floor((totalProcessed / totalFileSize) * 100);
 
-		console.log("Start parsing of file, line-by-line");
-
-		if (success) {
-			var rl = readline.createInterface({
-				input: fs.createReadStream(newFileName)
+		// only update progress every percent increment
+		if(newProgress > progress)
+		{
+			progress = newProgress;
+			sockets.emit("progress", {
+				"progress":  progress
 			});
-
-			rl.on('line', function(line) {
-				var csvObj = parse(line);
-				dbUsers.saveUser(createUserObject(csvObj[0]));
-
-				totalProcessed = totalProcessed + Buffer.byteLength(line);
-				var newProgress = Math.floor((totalProcessed / totalFileSize) * 100);
-
-				// only update progress every percent increment
-				if(newProgress > progress)
-				{
-					progress = newProgress;
-					socket.emit("progress", {
-						"progress":  progress
-					});
-				}
-			});
-
-			rl.on('close', function() {
-				console.log("Finished importing file into db");
-				socket.emit("complete", {});
-
-				fs.unlinkSync(newFileName);
-				return cb();
-			});
-
-			rl.on('error', function(err) {
-				console.error(err);
-				return cb();
-			});
-
-		} else {
-			return cb("Could not save to file");
 		}
-
 	});
 
-};
+	rl.on('close', function() {
+		console.log("Finished importing file into db");
+		sockets.emit("complete", {});
+		return cb();
+	});
+
+	rl.on('error', function(err) {
+		console.error(err);
+		return cb();
+	});
+
+}

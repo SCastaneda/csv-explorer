@@ -108,6 +108,7 @@ function findById(id, cb) {
     });
 }
 
+// search number fields other than the id (age)
 function numberSearch(number, limit, cb) {
     userModel.find({ 'age': number })
     .limit(limit)
@@ -138,14 +139,14 @@ function textSearch(text, limit, cb) {
     });
 }
 
-exports.dropUsers = function() {
+exports.dropUsers = function(cb) {
     userModel.remove({}, function(err){
         if(err) {
             console.error(err);
         } else {
             console.log("All users dropped.");
         }
-
+        cb();
     });
 };
 
