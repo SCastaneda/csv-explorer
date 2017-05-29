@@ -3,7 +3,7 @@ var router = express.Router();
 var importer = require('../api/importer');
 var dbUsers = require('../api/db/users');
 
-// we have one socket to show the progress of an upload
+// broadcast info to all sockets
 var progressSockets;
 var appPort;
 
