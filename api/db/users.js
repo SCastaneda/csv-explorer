@@ -9,7 +9,8 @@ var userSchema  = new Schema({
                             "name"   : String, 
                             "age"    : Number, 
                             "address": String, 
-                            "team"   : String
+                            "team"   : String,
+                            "session": String
                         });
 
 userSchema.index(
@@ -29,13 +30,14 @@ userSchema.index(
 
 var userModel = mongoose.model('users', userSchema);
 
-function saveUser(user) {
+function saveUser(user, session) {
     var dbUser = new userModel();
     dbUser.id = user.id;
     dbUser.name = user.name;
     dbUser.age = user.age;
     dbUser.address = user.address;
     dbUser.team = user.team;
+    dbUser.session = session;
 
     dbUser.save(function(err, newUser) {
         if (err) {
@@ -44,7 +46,7 @@ function saveUser(user) {
     });
 }
 
-exports.search = function(query, cb) {
+exports.search = function(query, session, cb) {
 
     var totalLimit = 20;
     var res = [];
@@ -58,7 +60,7 @@ exports.search = function(query, cb) {
     var isNumberSearch = !isNaN(+query);
     
     if(isNumberSearch) {
-        findById(+query, function(err, user) {
+        findById(+query, session, function(err, user) {
 
             if(user !== null) {
                 res = res.concat(user);
@@ -66,20 +68,27 @@ exports.search = function(query, cb) {
 
             var limit = totalLimit - res.length;
 
-            numberSearch(+query, limit, function(err, users) {
+            numberSearch(+query, session, limit, function(err, users) {
 
                 if(users !== null) {
                     res = res.concat(users);
+                    console.log("After number search: " + res);
+                } else {
+                    console.log("Number search came back with null");
                 }
 
                 if(res.length != totalLimit)
                 {
                     var limit = totalLimit - res.length;
-                    textSearch(query, limit, function(err, users2) {
+                    textSearch(query, session, limit, function(err, users2) {
 
                         if(users2 !== null) {
                             res = res.concat(users2);
+                        } else {
+                            console.log("Text Search came back with null");
                         }
+
+                        console.log("After textSearch: " + res);
                         cb(err, res);
                     });
                 } else {
@@ -88,15 +97,15 @@ exports.search = function(query, cb) {
             });
         });
     } else {
-        textSearch(query, totalLimit, function(err, users) {
+        textSearch(query, session, totalLimit, function(err, users) {
             cb(err, users);
         });
     }
     
 };
 
-function findById(id, cb) {
-    userModel.findOne({"id": id}, function(err, user) {
+function findById(id, session, cb) {
+    userModel.findOne({"id": id, "session": session}, function(err, user) {
         if(err) {
             console.error(err);
             cb(err, user);
@@ -108,8 +117,8 @@ function findById(id, cb) {
     });
 }
 
-function numberSearch(number, limit, cb) {
-    userModel.find({ 'age': number })
+function numberSearch(number, session, limit, cb) {
+    userModel.find({ 'age': number, 'session': session })
     .limit(limit)
     .exec(function(err, users) {
         if(err) {
@@ -122,33 +131,54 @@ function numberSearch(number, limit, cb) {
     });
 }
 
-function textSearch(text, limit, cb) {
+function textSearch(text, session, limit, cb) {
+
     userModel.find({ "$text": { "$search": text } })
     .select({ "score": { "$meta": "textScore" } })
     .sort({ "score": { "$meta": "textScore" } })
-    .limit(limit)
     .exec(function(err,result) {
         if(err) {
             console.error(err);
             cb(err, {});
         } else {
-            console.log(result);
-            cb(false, result);
+            console.log("Before session filter:" + result);
+            sessionFilter(result, session, limit, function(filteredUsers){
+                console.log("After session filter: " + filteredUsers);
+                cb(err, filteredUsers);
+            });
         }
     });
 }
 
-exports.dropUsers = function() {
-    userModel.remove({}, function(err){
+function sessionFilter(resultSet, session, limit, cb) {
+    var filteredUsers = [];
+
+    console.log("Filtering through "+resultSet.length+" items");
+
+    for(var i = 0; i < resultSet.length; i++) {
+        if(resultSet[i].session == session) {
+            filteredUsers.push(resultSet[i]);
+
+            if(filteredUsers.length == limit) {
+                return cb(filteredUsers);
+            }
+        }
+    }
+
+    cb(filteredUsers);
+}
+
+exports.dropUsers = function(session, cb) {
+    userModel.remove({ "session": session }, function(err){
         if(err) {
             console.error(err);
         } else {
             console.log("All users dropped.");
         }
-
+        cb();
     });
 };
 
-exports.saveUser = function(user) {
-    saveUser(user);
+exports.saveUser = function(user, session) {
+    saveUser(user, session);
 };

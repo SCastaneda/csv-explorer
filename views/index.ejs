@@ -78,17 +78,25 @@
     <script src="/javascripts/progress.js"></script>
 
     <script>
+    var session = window.location.hash.replace("#", "");
+
+    $(window).on('hashchange', function() {
+      session = window.location.hash.replace("#", "");
+    });
+
     // upload form
     (function() {
       $('form').ajaxForm({
+          "data": { "session": session },
           beforeSend: function() {
-              // reconnect the socket for the progress bar
-              reconnect();
               var percentVal = '0%';
               bar.width(percentVal)
               percent.html(percentVal);
           },
-          success: function() {},
+          success: function(data) {
+            console.log(data); 
+          },
+          error: function(error) { console.error(error); },
           complete: function(xhr) {
             $('#results').html("Your file has been uploaded and is being processed. Feel free to start searching.")
           }

@@ -1,11 +1,32 @@
 function search(query, cb) {
-	$.ajax({
-	  type: "POST",
-	  url: "/search",
-	  data: { "query": query },
-	  success: cb,
-	  dataType: "json"
-	});
+
+	var body = {
+		"query": query
+	};
+
+	if(session !== undefined) {
+		body.session = session;
+	} else {
+		// check if the window.location has a hash defined
+		var hash = window.location.hash.replace("#", "");
+		if(hash.length > 0) {
+			session = hash;
+			body.session = session;
+		}
+	}
+
+	if(session === undefined || session.length === 0) {
+		$("#results").html("Please upload a csv file before attempting to search");
+	} else {
+
+		$.ajax({
+		  type: "POST",
+		  url: "/search",
+		  data: body,
+		  success: cb,
+		  dataType: "json"
+		});
+	}
 }
 
 function populateTable(data) {
